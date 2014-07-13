@@ -14,6 +14,7 @@ class GP_Views extends GP_Plugin {
 
 	public function __construct() {
 		parent::__construct();
+		$this->add_action( 'translation_set_filters' );
 		$this->add_filter( 'for_translation_where', array( 'args'=> 2 ) );
 		$this->add_filter( 'gp_project_actions', array( 'args' => 2 ) );
 		$this->add_routes();
@@ -169,6 +170,20 @@ class GP_Views extends GP_Plugin {
 		$actions[] = gp_link_get( '/views' . gp_url_project( $project ), __( 'Project Views' ) );
 		return $actions;
 	}
+
+	function translation_set_filters() {
+		$views_for_select = array( '' =>  __('&mdash; View &mdash;' ) );
+		foreach ( $this->views as $id => $view ) {
+			$views_for_select[$id] = $view->name;
+		}
+		//TODO: use template
+	?>
+			<dt><?php _e( 'Views' ); ?></dt>
+			<dd>
+				<?php echo gp_select('filters[view]', $views_for_select, $this->current_view ); ?>
+			</dd>
+	<?php
+		}
 }
 
 GP::$plugins->views = new GP_Views;
