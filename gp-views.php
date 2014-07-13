@@ -172,7 +172,7 @@ class GP_Views extends GP_Plugin {
 	}
 
 	function translation_set_filters() {
-		$views_for_select = array( '' =>  __('&mdash; View &mdash;' ) );
+		$views_for_select = array( '' =>  __('&mdash; Select &mdash;' ) );
 		foreach ( $this->views as $id => $view ) {
 			$views_for_select[$id] = $view->name;
 		}
