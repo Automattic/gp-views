@@ -180,7 +180,7 @@ class GP_Views extends GP_Plugin {
 	?>
 			<dt><?php _e( 'Views' ); ?></dt>
 			<dd>
-				<?php echo gp_select('filters[view]', $views_for_select, $this->current_view ); ?>
+				<?php echo gp_select( 'filters[view]', $views_for_select, $this->current_view ); ?>
 			</dd>
 	<?php
 		}
