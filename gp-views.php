@@ -23,6 +23,7 @@ class GP_Views extends GP_Plugin {
 	function set_project_id( $project_id ) {
 		$this->project_id = $project_id;
 		$this->views = $this->get_option( 'views_' . $this->project_id );
+		$this->set_current_view();
 	}
 
 	function set_current_view() {
@@ -132,7 +133,6 @@ class GP_Views extends GP_Plugin {
 	function for_translation_where( $where, $translation_set ) {
 
 		$this->set_project_id( $translation_set->project_id );
-		$this->set_current_view();
 
 		if ( ! $this->current_view ) {
 			return $where;
