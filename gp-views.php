@@ -173,6 +173,11 @@ class GP_Views extends GP_Plugin {
 
 	function translation_set_filters() {
 		global $project;
+
+		if ( empty( $this->views ) ) {
+			return;
+		}
+
 		if ( ! GP::$user->current()->can( 'write', 'project' ) ) {
 			return;
 		}
