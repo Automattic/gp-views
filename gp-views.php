@@ -153,7 +153,7 @@ class GP_Views extends GP_Plugin {
 
 	function add_routes() {
 		$path = '(.+?)';
-		$id = '(.+)';
+		$id = '([^\/]+)';
 		$projects = 'projects';
 		$project = $projects.'/'.$path;
 
