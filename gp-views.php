@@ -184,6 +184,11 @@ class GP_Views extends GP_Plugin {
 
 		$views_for_select = array( '' =>  __('&mdash; Select &mdash;' ) );
 		foreach ( $this->views as $id => $view ) {
+
+			if ( 'true' != $view->public && ! GP::$user->current()->can( 'write', 'project', $this->project_id ) ) {
+				continue;
+			}
+
 			$views_for_select[$id] = $view->name;
 		}
 		//TODO: use template
