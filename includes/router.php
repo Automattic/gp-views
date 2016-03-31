@@ -2,6 +2,9 @@
 class GP_Route_Views extends GP_Route_Main {
 
 	function __construct() {
+		global $gp_plugin_views;
+
+		$this->plugin = $gp_plugin_views;
 		$this->template_path = dirname( dirname( __FILE__ ) ) . '/templates/';
 	}
 
@@ -16,8 +19,9 @@ class GP_Route_Views extends GP_Route_Main {
 			return;
 		}
 
-		GP::$plugins->views->set_project_id( $project->id );
-		$views = GP::$plugins->views->views;
+		$this->plugin->set_project_id( $project->id );
+		
+		$views = $this->plugin->views;
 
 		$this->tmpl( 'views', get_defined_vars() );
 
@@ -34,7 +38,7 @@ class GP_Route_Views extends GP_Route_Main {
 			return;
 		}
 
-		GP::$plugins->views->set_project_id( $project->id );
+		$this->plugin->set_project_id( $project->id );
 
 		$view = new GP_Views_View( array() );
 		$this->tmpl( 'edit', get_defined_vars() );
@@ -51,13 +55,13 @@ class GP_Route_Views extends GP_Route_Main {
 			return;
 		}
 
-		GP::$plugins->views->set_project_id( $project->id );
+		$this->plugin->set_project_id( $project->id );
 
-		if ( ! isset( GP::$plugins->views->views[$view_id] ) ) {
+		if ( ! isset( $this->plugin->views[$view_id] ) ) {
 			$this->die_with_404();
 		}
 
-		GP::$plugins->views->delete( $view_id );
+		$this->plugin->delete( $view_id );
 		$this->notices[] =  __( 'View deleted' );
 
 		$this->redirect( gp_url( '/views' . gp_url_project( $project) ) );
@@ -74,9 +78,9 @@ class GP_Route_Views extends GP_Route_Main {
 			return;
 		}
 
-		GP::$plugins->views->set_project_id( $project->id );
+		$this->plugin->set_project_id( $project->id );
 
-		if ( ! GP::$plugins->views->save( gp_post('view') ) ) {
+		if ( ! $this->plugin->save( gp_post('view') ) ) {
 			$this->errors[] = __( 'Error creating view' );
 		} else {
 			$this->notices[] =  __( 'View Created' );
@@ -95,13 +99,13 @@ class GP_Route_Views extends GP_Route_Main {
 			return;
 		}
 
-		GP::$plugins->views->set_project_id( $project->id );
+		$this->plugin->set_project_id( $project->id );
 
-		if ( ! isset( GP::$plugins->views->views[$view_id] ) ) {
+		if ( ! isset( $this->plugin->views[$view_id] ) ) {
 			$this->die_with_404();
 		}
 
-		$view = GP::$plugins->views->views[$view_id];
+		$view = $this->plugin->views[$view_id];
 		$this->tmpl( 'edit', get_defined_vars() );
 	}
 
@@ -116,13 +120,13 @@ class GP_Route_Views extends GP_Route_Main {
 			return;
 		}
 
-		GP::$plugins->views->set_project_id( $project->id );
+		$this->plugin->set_project_id( $project->id );
 
-		if ( ! isset( GP::$plugins->views->views[$view_id] ) ) {
+		if ( ! isset( $this->plugin->views[$view_id] ) ) {
 			$this->die_with_404();
 		}
 
-		if ( ! GP::$plugins->views->save( gp_post('view'), $view_id ) ) {
+		if ( ! $this->plugin->save( gp_post('view'), $view_id ) ) {
 			$this->errors[] = __( 'Error creating view' );
 		} else {
 			$this->notices[] =  __( 'View saved' );
@@ -143,9 +147,9 @@ class GP_Route_Views extends GP_Route_Main {
 			$this->die_with_404();
 		}
 
-		GP::$plugins->views->set_project_id( $project->id );
+		$this->plugin->set_project_id( $project->id );
 
-		if ( ! isset( GP::$plugins->views->views[$id] ) ) {
+		if ( ! isset( $this->plugin->views[$id] ) ) {
 			$this->die_with_404();
 		}
 
@@ -155,14 +159,14 @@ class GP_Route_Views extends GP_Route_Main {
 
 		if ( false === $stats ) {
 			$sets = GP::$translation_set->by_project_id( $project->id );
-			GP::$plugins->views->current_view = $id;
+			$this->plugin->current_view = $id;
 
 			$stats = array();
-			GP::$plugins->views->set_originals_ids_for_view();
-			$stats['originals'] = count( GP::$plugins->views->originals_ids  );
+			$this->plugin->set_originals_ids_for_view();
+			$stats['originals'] = count( $this->plugin->originals_ids  );
 
 			foreach ( $sets as $set ) {
-				$translated_count = GP::$plugins->views->translations_count_in_view_for_set_id( $set->id );
+				$translated_count = $this->plugin->translations_count_in_view_for_set_id( $set->id );
 				$stats['translation_sets'][$set->locale]['current'] = $translated_count;
 				$stats['translation_sets'][$set->locale]['untranslated'] = $stats['originals'] - $translated_count;
 				$stats['translation_sets'][$set->locale]['percent'] = floor( $translated_count/$stats['originals']*100 );
