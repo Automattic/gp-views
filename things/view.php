@@ -2,6 +2,7 @@
 
 class GP_Views_View {
 	var $name;
+	var $public;
 	var $terms = array();
 	var $priorities = array();
 
@@ -16,7 +17,7 @@ class GP_Views_View {
 
 	function validate() {
 		if ( empty( $this->terms ) || ! $this->name ) {
-			throw new Exception( 'Missing property');
+			throw new Exception( 'Missing property' );
 		}
 	}
 }

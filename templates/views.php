@@ -24,6 +24,16 @@ gp_tmpl_header();
 			?>
 			</dd>
 		<?php endif;?>
+			<dt>View visibility:</dt>
+			<dd>
+			<?php
+				if ( $view->public == 'true' ) {
+					echo 'Public';
+				} else {
+					echo 'Super admins only';
+				}
+			?>
+			</dd>
 		</dl>
 	</div>
 	<?php endforeach; ?>

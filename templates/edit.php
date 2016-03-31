@@ -25,6 +25,13 @@ gp_tmpl_header();
 					<label><input <?php gp_checked( in_array( (string) $priority, (array) $view->priorities, true ) );?> type="checkbox" name="view[priorities][]" value="<?php echo esc_attr( $priority );?>"><?php echo esc_html( $label );?></label><br />
 			<?php } ?>
 			</dd>
+			<dt><?php _e( 'Is view public' ); ?></dt>
+			<dd>
+			<?php echo gp_radio_buttons( 'view[public]', array(
+				'true' => 'Yes, visible to all users',
+				'false' => 'No, only visible to super admins',
+			), $view->public ); ?>
+			</dd>
 		</dl>
 		<dl>
 			<dt><input type="submit" value="<?php echo esc_attr( __( 'Save' ) ); ?>"><span class="or-cancel"><?php _e('or'); ?> <a href="javascript:history.back();"><?php _e('Cancel'); ?></a></span></dt>

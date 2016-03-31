@@ -172,17 +172,12 @@ class GP_Views extends GP_Plugin {
 	}
 
 	function translation_set_filters() {
-		global $project;
 
 		if ( empty( $this->views ) ) {
 			return;
 		}
 
-		if ( ! GP::$user->current()->can( 'write', 'project' ) ) {
-			return;
-		}
-
-		$views_for_select = array( '' =>  __('&mdash; Select &mdash;' ) );
+		$views_for_select = array();
 		foreach ( $this->views as $id => $view ) {
 
 			if ( 'true' != $view->public && ! GP::$user->current()->can( 'write', 'project', $this->project_id ) ) {
@@ -191,6 +186,12 @@ class GP_Views extends GP_Plugin {
 
 			$views_for_select[$id] = $view->name;
 		}
+
+		if ( empty( $views_for_select ) ) {
+			return;
+		}
+
+		$views_for_select = array( '' =>  __('&mdash; Select &mdash;' ) ) + $views_for_select;
 		//TODO: use template
 	?>
 			<dt><?php _e( 'Views' ); ?></dt>

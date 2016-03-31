@@ -12,6 +12,10 @@ class GP_Route_Views extends GP_Route_Main {
 			$this->die_with_404();
 		}
 
+		if ( $this->cannot_and_redirect( 'write', 'project', $project->id ) ) {
+			return;
+		}
+
 		GP::$plugins->views->set_project_id( $project->id );
 		$views = GP::$plugins->views->views;
 
