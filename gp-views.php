@@ -1,4 +1,11 @@
 <?php
+/**
+ * Plugin name: GlotPress: Views
+ * Plugin author: Automattic
+ * Version: 1.0
+ *
+ * Description: GlotPress plugin to set up predefined views to search for strings using multiple conditions
+ */
 
 require_once( dirname(__FILE__) .'/includes/router.php' );
 require_once( dirname(__FILE__) .'/things/view.php' );
@@ -12,14 +19,26 @@ class GP_Views {
 
 	var $views = array();
 
-	public function init() {
+	public static $instance = null;
+
+	public static function init() {
+		self::get_instance();
+	}
+
+	public static function get_instance() {
+		if ( is_null( self::$instance ) ) {
+			self::$instance = new self();
+		}
+
+		return self::$instance;
+	}
+
+	public function __construct() {
 		add_action( 'gp_translation_set_filters', array( $this, 'translation_set_filters' ) );
 		add_filter( 'gp_for_translation_where', array( $this, 'for_translation_where' ), 10, 2 );
 		add_filter( 'gp_project_actions', array( $this, 'gp_project_actions' ), 10, 2 );
 		$this->add_routes();
 	}
-
-
 
 	function set_project_id( $project_id ) {
 		$this->project_id = $project_id;
@@ -204,6 +223,4 @@ class GP_Views {
 		}
 }
 
-$gp_plugin_views = new GP_Views;
-add_action( 'gp_init', array( $gp_plugin_views, 'init' ) );
-
+add_action( 'gp_init', array( 'GP_Views', 'init' ) );

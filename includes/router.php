@@ -2,9 +2,7 @@
 class GP_Route_Views extends GP_Route_Main {
 
 	function __construct() {
-		global $gp_plugin_views;
-
-		$this->plugin = $gp_plugin_views;
+		$this->plugin = GP_Views::get_instance();
 		$this->template_path = dirname( dirname( __FILE__ ) ) . '/templates/';
 	}
 
@@ -20,7 +18,7 @@ class GP_Route_Views extends GP_Route_Main {
 		}
 
 		$this->plugin->set_project_id( $project->id );
-		
+
 		$views = $this->plugin->views;
 
 		$this->tmpl( 'views', get_defined_vars() );
