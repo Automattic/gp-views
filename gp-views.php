@@ -19,7 +19,7 @@ class GP_Views {
 
 	var $views = array();
 
-	public static $instance = null;
+	private static $instance = null;
 
 	public static function init() {
 		self::get_instance();
