@@ -1,9 +1,16 @@
 <?php
+/**
+ * Plugin name: GlotPress: Views
+ * Plugin author: Automattic
+ * Version: 1.0
+ *
+ * Description: GlotPress plugin to set up predefined views to search for strings using multiple conditions
+ */
 
 require_once( dirname(__FILE__) .'/includes/router.php' );
 require_once( dirname(__FILE__) .'/things/view.php' );
 
-class GP_Views extends GP_Plugin {
+class GP_Views {
 
 	var $id = 'gp_views';
 	var $current_view = null;
@@ -12,17 +19,31 @@ class GP_Views extends GP_Plugin {
 
 	var $views = array();
 
+	private static $instance = null;
+
+	public static function init() {
+		self::get_instance();
+	}
+
+	public static function get_instance() {
+		if ( is_null( self::$instance ) ) {
+			self::$instance = new self();
+		}
+
+		return self::$instance;
+	}
+
 	public function __construct() {
-		parent::__construct();
-		$this->add_action( 'translation_set_filters' );
-		$this->add_filter( 'for_translation_where', array( 'args'=> 2 ) );
-		$this->add_filter( 'gp_project_actions', array( 'args' => 2 ) );
+		add_action( 'gp_translation_set_filters', array( $this, 'translation_set_filters' ) );
+		add_filter( 'gp_for_translation_where', array( $this, 'for_translation_where' ), 10, 2 );
+		add_filter( 'gp_project_actions', array( $this, 'gp_project_actions' ), 10, 2 );
 		$this->add_routes();
 	}
 
 	function set_project_id( $project_id ) {
 		$this->project_id = $project_id;
-		$this->views = $this->get_option( 'views_' . $this->project_id );
+		$this->views = get_option( 'views_' . $this->project_id, array() );
+
 		$this->set_current_view();
 	}
 
@@ -46,11 +67,11 @@ class GP_Views extends GP_Plugin {
 		}
 
 		if ( ! $view_id  ) {
-			$view_id = gp_sanitize_for_url( $view_data['name' ] );
+			$view_id = esc_attr( $view_data['name' ] );
 			$i = 1;
 
 			while( in_array( $view_id, array_keys($this->views ) ) && $i < 10 ) {
-				$view_id = gp_sanitize_for_url( $view_data['name' ] ) . '_' . $i++;
+				$view_id = esc_attr( $view_data['name' ] ) . '_' . $i++;
 			}
 
 			//TODO: return error instead of overwriting in case we're out of the loop at 10
@@ -69,7 +90,7 @@ class GP_Views extends GP_Plugin {
 
 		$this->views[$view_id] = $view;
 
-		$this->update_option( 'views_' . $this->project_id ,$this->views );
+		update_option( 'views_' . $this->project_id ,$this->views );
 		return true;
 	}
 
@@ -80,11 +101,11 @@ class GP_Views extends GP_Plugin {
 		}
 
 		unset($this->views[$view_id]);
-		$this->update_option( 'views_' . $this->project_id ,$this->views );
+		update_option( 'views_' . $this->project_id ,$this->views );
 	}
 
 	function set_originals_ids_for_view() {
-		global $gpdb;
+		global $wpdb;
 
 		if ( ! $this->current_view || ! $this->project_id ) {
 			return;
@@ -103,17 +124,17 @@ class GP_Views extends GP_Plugin {
 
 		$view_where = array();
 		foreach ( $terms as $term ) {
-			$like = "LIKE '%" . ( $gpdb->escape( like_escape ( $term ) ) ) . "%'";
+			$like = "LIKE '%" . ( $wpdb->escape( like_escape ( $term ) ) ) . "%'";
 			$view_where[] = '(' . implode( ' OR ', array_map( lambda('$x', '"($x $like)"', compact('like')), array('o.singular', 'o.plural', 'o.context', 'o.references' ) ) ) . ')';
 		}
 
 		$view_where = '(' . implode( ' OR ', $view_where ) . ')';
 
-		$this->originals_ids = $gpdb->get_col( "SELECT id FROM {$gpdb->originals} AS o WHERE $view_where AND o.status LIKE '+%' $priority_where AND o.project_id =" . absint( $this->project_id ) );
+		$this->originals_ids = $wpdb->get_col( "SELECT id FROM {$wpdb->originals} AS o WHERE $view_where AND o.status LIKE '+%' $priority_where AND o.project_id =" . absint( $this->project_id ) );
 	}
 
 	function translations_count_in_view_for_set_id( $set_id ) {
-		global $gpdb;
+		global $wpdb;
 
 		if ( $this->originals_ids ) {
 			$this->set_originals_ids_for_view();
@@ -125,8 +146,8 @@ class GP_Views extends GP_Plugin {
 
 		$originals = implode( ', ', $this->originals_ids );
 
-		return $gpdb->get_var( $gpdb->prepare( "SELECT COUNT(*) as current
-				FROM $gpdb->translations WHERE translation_set_id = %d AND original_id IN( $originals ) AND status = 'current'", $set_id ) );
+		return $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) as current
+				FROM $wpdb->translations WHERE translation_set_id = %d AND original_id IN( $originals ) AND status = 'current'", $set_id ) );
 
 	}
 
@@ -138,12 +159,12 @@ class GP_Views extends GP_Plugin {
 			return $where;
 		}
 
-		global $gpdb;
+		global $wpdb;
 		$terms = $this->views[$this->current_view]->terms;
 
 		$view_where = array();
 		foreach ( $terms as $term ) {
-			$like = "LIKE '%" . ( $gpdb->escape( like_escape ( $term ) ) ) . "%'";
+			$like = "LIKE '%" . ( $wpdb->escape( like_escape ( $term ) ) ) . "%'";
 			$view_where[] = '(' . implode( ' OR ', array_map( lambda('$x', '"($x $like)"', compact('like')), array( 'o.singular', 'o.plural', 'o.context', 'o.references' ) ) ) . ')';
 		}
 		$view_where = '(' . implode( ' OR ', $view_where ) . ')';
@@ -180,7 +201,7 @@ class GP_Views extends GP_Plugin {
 		$views_for_select = array();
 		foreach ( $this->views as $id => $view ) {
 
-			if ( 'true' != $view->public && ! GP::$user->current()->can( 'write', 'project', $this->project_id ) ) {
+			if ( 'true' != $view->public && ! GP::$permission->current_user_can( 'write', 'project', $this->project_id ) ) {
 				continue;
 			}
 
@@ -202,4 +223,4 @@ class GP_Views extends GP_Plugin {
 		}
 }
 
-GP::$plugins->views = new GP_Views;
+add_action( 'gp_init', array( 'GP_Views', 'init' ) );
