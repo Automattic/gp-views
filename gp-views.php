@@ -34,7 +34,7 @@ class GP_Views {
 	}
 
 	public function __construct() {
-		add_action( 'gp_translation_set_filters', array( $this, 'translation_set_filters' ) );
+		add_action( 'gp_translation_set_filters_form', array( $this, 'translation_set_filters' ) );
 		add_filter( 'gp_for_translation_where', array( $this, 'for_translation_where' ), 10, 2 );
 		add_filter( 'gp_project_actions', array( $this, 'gp_project_actions' ), 10, 2 );
 		$this->add_routes();
