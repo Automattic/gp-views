@@ -130,7 +130,7 @@ class GP_Views {
 
 		$view_where = '(' . implode( ' OR ', $view_where ) . ')';
 
-		$this->originals_ids = $wpdb->get_col( "SELECT id FROM {$wpdb->originals} AS o WHERE $view_where AND o.status LIKE '+%' $priority_where AND o.project_id =" . absint( $this->project_id ) );
+		$this->originals_ids = $wpdb->get_col( "SELECT id FROM {$wpdb->gp_originals} AS o WHERE $view_where AND o.status LIKE '+%' $priority_where AND o.project_id =" . absint( $this->project_id ) );
 	}
 
 	function translations_count_in_view_for_set_id( $set_id ) {
@@ -147,7 +147,7 @@ class GP_Views {
 		$originals = implode( ', ', $this->originals_ids );
 
 		return $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) as current
-				FROM $wpdb->translations WHERE translation_set_id = %d AND original_id IN( $originals ) AND status = 'current'", $set_id ) );
+				FROM $wpdb->gp_translations WHERE translation_set_id = %d AND original_id IN( $originals ) AND status = 'current'", $set_id ) );
 
 	}
 
