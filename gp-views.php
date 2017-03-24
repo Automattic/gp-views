@@ -88,6 +88,19 @@ class GP_Views {
 			return false;
 		}
 
+		/**
+		 * Fires on saving a view
+		 *
+		 * @param bool  $can_save   Whether the view can be saved.
+		 * @param int   $project_id The project of the view.
+		 * @param int   $view_id    The view id.
+		 * @param array $new_view   The new view content.
+		 * @param array $old_view   The old view content.
+		 */
+		if ( ! apply_filters( 'gp_views_save', true, $this->project_id, $view_id, $view, $this->views[$view_id] ) ) {
+			return false;
+		}
+
 		$this->views[$view_id] = $view;
 
 		update_option( 'views_' . $this->project_id ,$this->views );
