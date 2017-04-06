@@ -1,5 +1,7 @@
 <?php
-class GP_Route_Views extends GP_Route_Main {
+class GP_Route_Views extends GP_Route {
+
+	var $plugin;
 
 	function __construct() {
 		$this->plugin = GP_Views::get_instance();
@@ -55,14 +57,14 @@ class GP_Route_Views extends GP_Route_Main {
 
 		$this->plugin->set_project_id( $project->id );
 
-		if ( ! isset( $this->plugin->views[$view_id] ) ) {
+		if ( ! isset( $this->plugin->views[ $view_id ] ) ) {
 			$this->die_with_404();
 		}
 
 		$this->plugin->delete( $view_id );
-		$this->notices[] =  __( 'View deleted' );
+		$this->notices[] = __( 'View deleted' );
 
-		$this->redirect( gp_url( '/views' . gp_url_project( $project) ) );
+		$this->redirect( gp_url( '/views' . gp_url_project( $project ) ) );
 	}
 
 	function view_new_post( $project_path ) {
@@ -78,12 +80,12 @@ class GP_Route_Views extends GP_Route_Main {
 
 		$this->plugin->set_project_id( $project->id );
 
-		if ( ! $this->plugin->save( gp_post('view') ) ) {
+		if ( ! $this->plugin->save( gp_post( 'view' ) ) ) {
 			$this->errors[] = __( 'Error creating view' );
 		} else {
-			$this->notices[] =  __( 'View Created' );
+			$this->notices[] = __( 'View Created' );
 		}
-		$this->redirect( gp_url( '/views' . gp_url_project( $project) ) );
+		$this->redirect( gp_url( '/views' . gp_url_project( $project ) ) );
 	}
 
 	function view_edit_get( $project_path, $view_id ) {
@@ -99,11 +101,11 @@ class GP_Route_Views extends GP_Route_Main {
 
 		$this->plugin->set_project_id( $project->id );
 
-		if ( ! isset( $this->plugin->views[$view_id] ) ) {
+		if ( ! isset( $this->plugin->views[ $view_id ] ) ) {
 			$this->die_with_404();
 		}
 
-		$view = $this->plugin->views[$view_id];
+		$view = $this->plugin->views[ $view_id ];
 		$this->tmpl( 'edit', get_defined_vars() );
 	}
 
@@ -120,14 +122,14 @@ class GP_Route_Views extends GP_Route_Main {
 
 		$this->plugin->set_project_id( $project->id );
 
-		if ( ! isset( $this->plugin->views[$view_id] ) ) {
+		if ( ! isset( $this->plugin->views[ $view_id ] ) ) {
 			$this->die_with_404();
 		}
 
-		if ( ! $this->plugin->save( gp_post('view'), $view_id ) ) {
+		if ( ! $this->plugin->save( gp_post( 'view' ), $view_id ) ) {
 			$this->errors[] = __( 'Error creating view' );
 		} else {
-			$this->notices[] =  __( 'View saved' );
+			$this->notices[] = __( 'View saved' );
 		}
 
 		$this->redirect( gp_url( '/views' . gp_url_project( $project ) ) );
@@ -147,7 +149,7 @@ class GP_Route_Views extends GP_Route_Main {
 
 		$this->plugin->set_project_id( $project->id );
 
-		if ( ! isset( $this->plugin->views[$id] ) ) {
+		if ( ! isset( $this->plugin->views[ $id ] ) ) {
 			$this->die_with_404();
 		}
 
@@ -161,7 +163,7 @@ class GP_Route_Views extends GP_Route_Main {
 
 			$stats = array();
 			$this->plugin->set_originals_ids_for_view();
-			$stats['originals'] = count( $this->plugin->originals_ids  );
+			$stats['originals'] = count( $this->plugin->originals_ids );
 
 			foreach ( $sets as $set ) {
 				$translated_count = $this->plugin->translations_count_in_view_for_set_id( $set->id );
