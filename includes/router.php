@@ -167,9 +167,14 @@ class GP_Route_Views extends GP_Route {
 
 			foreach ( $sets as $set ) {
 				$translated_count = $this->plugin->translations_count_in_view_for_set_id( $set->id );
-				$stats['translation_sets'][$set->locale]['current'] = $translated_count;
-				$stats['translation_sets'][$set->locale]['untranslated'] = $stats['originals'] - $translated_count;
-				$stats['translation_sets'][$set->locale]['percent'] = floor( $translated_count/$stats['originals']*100 );
+				$set_stats = array(
+					'current' => $translated_count,
+					'untranslated' => $stats['originals'] - $translated_count,
+					'percent' => floor( $translated_count / $stats['originals'] * 100 ),
+				);
+
+				$set_key = ( 'default' !== $set->slug ) ? "{$set->locale}_$set->slug" : $set->locale;
+				$stats['translation_sets'][ $set_key ] = $set_stats;
 			}
 			wp_cache_set( $cache_key, $stats, 'gp_views', 6 * 60 * 60 );
 		}
