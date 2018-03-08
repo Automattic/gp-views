@@ -144,6 +144,40 @@ class GP_Route_Views extends GP_Route {
 		$this->redirect( gp_url( '/views' . gp_url_project( $project ) ) );
 	}
 
+	function view_coverage( $project_path ) {
+
+		$project = GP::$project->by_path( $project_path );
+
+		if ( ! $project || ! GP::$permission->current_user_can( 'write', 'project', $project->id ) ) {
+			$this->die_with_404();
+		}
+
+		$this->plugin->set_project_id( $project->id );
+		$paths = $missing_paths = $this->plugin->get_paths_for_project( $project->id );
+		$match = [];
+		foreach ( $this->plugin->views as $id => $view ) {
+			if ( 'true' != $view->public && isset( $_GET['public'] ) ) {
+				continue;
+			}
+
+			foreach ( $view->terms as $term ) {
+				$len = strlen( $term );
+				foreach ( array_keys( $missing_paths ) as $path ) {
+					if ( substr( $path, 0, $len ) === $term ) {
+						if ( $paths[ $path ] === true ) {
+							$paths[ $path ] = $id;
+							$match[ $path ] = $term;
+						}
+						unset( $missing_paths[ $path ] );
+					}
+				}
+			}
+		}
+
+		$views = $this->plugin->views;
+		$this->tmpl( 'coverage', get_defined_vars() );
+	}
+
 	function view_stats( $project_path, $id ) {
 
 		if ( ! $this->api ) {

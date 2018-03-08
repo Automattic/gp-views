@@ -163,6 +163,43 @@ class GP_Views {
 		$this->originals_ids = $wpdb->get_col( "SELECT id FROM {$wpdb->gp_originals} AS o WHERE $view_where AND o.status LIKE '+%' $priority_where AND o.project_id =" . absint( $this->project_id ) );
 	}
 
+	function get_paths_for_project( $project_id ) {
+		if ( ! GP::$permission->current_user_can( 'write', 'project', $this->project_id ) ) {
+			return [];
+		}
+
+		global $wpdb;
+
+		$cache_key = 'project_paths_' . $project_id;
+		$paths = wp_cache_get( $cache_key, 'gp_views' );
+
+		if ( true||! $paths ) {
+			$paths = array();
+			$references = $wpdb->get_col( "SELECT `references` FROM {$wpdb->gp_originals} WHERE `status` LIKE '+%' AND `project_id` =" . absint( $project_id ) );
+
+			foreach ( $references as $reference ) {
+				foreach ( explode( ' ', $reference ) as $line ) {
+					$dir = trim( dirname( $line ), '/' );
+					$dirs = explode( '/', $dir );
+					switch ( $dirs[0] ) {
+						case '.':
+							continue 2;
+						case 'client':
+						case 'server':
+							$dir = implode( '/', array_slice( $dirs, 0, 3 ) );
+							break;
+					}
+					$paths[ $dir . '/' ] = true;
+				}
+			}
+
+			ksort( $paths );
+
+			wp_cache_set( $cache_key, $paths, 'gp_views' );
+		}
+		return $paths;
+	}
+
 	function translations_count_in_view_for_set_id( $set_id ) {
 		global $wpdb;
 
@@ -224,6 +261,7 @@ class GP_Views {
 		GP::$router->add( "/views/$project/$id/-edit", array( 'GP_Route_Views', 'view_edit_post' ), 'post' );
 		GP::$router->add( "/views/$project/$id/-delete", array( 'GP_Route_Views', 'view_delete' ), 'get' );
 		GP::$router->add( "/views/$project/$locale", array( 'GP_Route_Views', 'locale_stats' ), 'get' );
+		GP::$router->add( "/views/$project/coverage", array( 'GP_Route_Views', 'view_coverage' ), 'get' );
 		GP::$router->add( "/views/$project/-add", array( 'GP_Route_Views', 'view_new_get' ), 'get' );
 		GP::$router->add( "/views/$project/-add", array( 'GP_Route_Views', 'view_new_post' ), 'post' );
 		GP::$router->add( "/views/$project", array( 'GP_Route_Views', 'views_get' ), 'get' );
@@ -243,6 +281,9 @@ class GP_Views {
 			$cache_key .= "_{$set->locale}_{$set->slug}";
 			wp_cache_delete( $cache_key, 'gp_views' );
 		}
+
+		wp_cache_delete( 'project_paths_' . $set->project_id, 'gp_views' );
+
 	}
 
 	function translation_set_filters() {

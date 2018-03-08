@@ -1,6 +1,6 @@
 <?php
 // translators: %1$s is the translation set name, %2$s is the project name
-gp_title( sprintf( __('Locales &lt; %1$s &lt; View Stats &lt; %2$s &lt; GlotPress'), esc_html( $set->name ), esc_html( $project->name ) ) );
+gp_title( sprintf( __( 'Locales &lt; %1$s &lt; View Stats &lt; %2$s &lt; GlotPress' ), esc_html( $set->name ), esc_html( $project->name ) ) );
 
 gp_breadcrumb( array(
 	gp_link_get( gp_url( '/languages' ), __( 'Locales', 'glotpress' ) ),
