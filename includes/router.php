@@ -21,8 +21,7 @@ class GP_Route_Views extends GP_Route {
 
 		$this->plugin->set_project_id( $project->id );
 
-		$views = $this->plugin->views;
-		$views = $this->sort_by_rank( $views );
+		$views = $this->plugin->sort_by_rank( $this->plugin->views );
 
 		$this->tmpl( 'views', get_defined_vars() );
 
@@ -258,60 +257,19 @@ class GP_Route_Views extends GP_Route {
 			return;
 		}
 
-		// Allows invalidating all stats when changing views in a project.
-		$stats_cache_key = "views_stats_{$project->id}";
-		$cache_key = wp_cache_get( $stats_cache_key, 'gp_views' );
-		if ( false === $cache_key ) {
-			$cache_key = "views_stats_{$project->id}_" . time();
-			wp_cache_set( $stats_cache_key, $cache_key, 'gp_views' );
-		}
-
-		$cache_key .= "_{$locale_slug}_{$slug}";
-
-		$stats = wp_cache_get( $cache_key, 'gp_views' );
-
-		if ( false === $stats ) {
-			$stats = [];
-			foreach ( $views as $id => $view ) {
-				$stats[ $id ] = [];
-				$this->plugin->current_view = $id;
-
-				$this->plugin->set_originals_ids_for_view();
-				$originals = max( count( $this->plugin->originals_ids ), 1 );
-				$translated_count = $this->plugin->translations_count_in_view_for_set_id( $set->id );
-				$stats[ $id ]['current'] = $translated_count;
-				$stats[ $id ]['total'] = $originals;
-				$stats[ $id ]['untranslated'] = $originals - $translated_count;
-				$stats[ $id ]['percent'] = floor( $translated_count / $originals * 100 );
-			}
-		}
-		wp_cache_set( $cache_key, $stats, 'gp_views' );
+		$stats = $this->plugin->get_locale_stats( $project->id, $locale_slug, $slug );
 
 		foreach ( $views as $id => $view ) {
+			if ( ! isset( $stats[ $id ] ) ) {
+				continue;
+			}
 			$views[ $id ] = (object) array_merge( (array) $view, $stats[ $id ] );
 			$views[ $id ]->url = gp_url_project_locale( $project->path, $locale_slug, $slug ) . '?filters[status]=untranslated&filters[view]=' . rawurlencode( $id );
 		}
-		$views = $this->sort_by_rank( $views );
+		$views = $this->plugin->sort_by_rank( $views );
 
 		unset( $stats );
 
 		$this->tmpl( 'locale-stats', get_defined_vars() );
-	}
-
-	private function sort_by_rank( $views ) {
-		uasort( $views, function( $a, $b ) {
-			if ( ! $a->rank ) {
-				$a->rank = 100;
-			}
-			if ( ! $b->rank ) {
-				$b->rank = 100;
-			}
-			if ( $a->rank === $b->rank ) {
-				return $a->name <=> $b->name;
-			}
-			return $a->rank <=> $b->rank;
-		} );
-
-		return $views;
 	}
 }

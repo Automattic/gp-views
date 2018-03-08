@@ -38,6 +38,8 @@ class GP_Views {
 		add_filter( 'gp_for_translation_where', array( $this, 'for_translation_where' ), 10, 2 );
 		add_filter( 'gp_project_actions', array( $this, 'gp_project_actions' ), 10, 2 );
 		add_action( 'gp_translation_saved', array( $this, 'gp_translation_saved' ), 10 );
+		add_filter( 'gp_translation_view_message',  array( $this, 'display_progressbar' ), 5, 2 );
+		add_filter( 'gp_project_template_set_percent_translated',  array( $this, 'project_link_view' ), 10, 3 );
 		$this->add_routes();
 	}
 
@@ -173,7 +175,7 @@ class GP_Views {
 		$cache_key = 'project_paths_' . $project_id;
 		$paths = wp_cache_get( $cache_key, 'gp_views' );
 
-		if ( true||! $paths ) {
+		if ( ! $paths ) {
 			$paths = array();
 			$references = $wpdb->get_col( "SELECT `references` FROM {$wpdb->gp_originals} WHERE `status` LIKE '+%' AND `project_id` =" . absint( $project_id ) );
 
@@ -286,6 +288,76 @@ class GP_Views {
 
 	}
 
+	function project_link_view( $percentage, $set, $project ) {
+		return '<a href="' . esc_url( gp_url_join( gp_url( '/views' ), gp_url_project( $project ), $set->locale, $set->slug ) ) . '">' . $percentage . '</a>';
+	}
+
+	function get_locale_stats( $project_id, $locale_slug, $slug ) {
+		// Allows invalidating all stats when changing views in a project.
+		$stats_cache_key = "views_stats_{$project_id}";
+		$cache_key = wp_cache_get( $stats_cache_key, 'gp_views' );
+		if ( false === $cache_key ) {
+			$cache_key = "views_stats_{$project_id}_" . time();
+			wp_cache_set( $stats_cache_key, $cache_key, 'gp_views' );
+		}
+
+		$cache_key .= "_{$locale_slug}_{$slug}";
+
+		$stats = wp_cache_get( $cache_key, 'gp_views' );
+		if ( false === $stats ) {
+			$set = GP::$translation_set->by_project_id_slug_and_locale( $project_id, $slug, $locale_slug );
+
+			$old_project_id = $this->project_id;
+			$old_current_view = $this->current_view;
+			$this->project_id = $project_id;
+			$stats = [];
+			foreach ( $this->views as $id => $view ) {
+				$stats[ $id ] = [];
+				$this->current_view = $id;
+
+				$this->set_originals_ids_for_view();
+				$originals = max( count( $this->originals_ids ), 1 );
+				$translated_count = $this->translations_count_in_view_for_set_id( $set->id );
+				$stats[ $id ]['current'] = $translated_count;
+				$stats[ $id ]['total'] = $originals;
+				$stats[ $id ]['untranslated'] = $originals - $translated_count;
+				$stats[ $id ]['percent'] = floor( $translated_count / $originals * 100 );
+			}
+			$this->current_view = $old_current_view;
+			$this->project_id = $old_project_id;
+			wp_cache_set( $cache_key, $stats, 'gp_views' );
+		}
+
+		return $stats;
+	}
+
+	function display_progressbar( $set, $project ) {
+		$views = [];
+		foreach ( $this->views as $id => $view ) {
+
+			if ( 'true' != $view->public ) {
+				if (
+					! GP::$permission->current_user_can( 'write', 'project', $this->project_id )
+					|| isset( $_GET['public'] ) ) {
+					continue;
+				}
+			}
+
+			$views[ $id ] = $view;
+		}
+
+		$stats = $this->get_locale_stats( $project->id, $set->locale, $set->slug );
+
+		foreach ( $views as $id => $view ) {
+			if ( ! isset( $stats[ $id ] ) ) {
+				continue;
+			}
+			$views[ $id ] = (object) $stats[ $id ];
+		}
+
+		gp_tmpl_load( 'progress-bar', get_defined_vars(), __DIR__ . '/templates' );
+	}
+
 	function translation_set_filters() {
 
 		if ( empty( $this->views ) ) {
@@ -315,6 +387,23 @@ class GP_Views {
 			</dd>
 	<?php
 		}
+
+	function sort_by_rank( $views ) {
+		uasort( $views, function( $a, $b ) {
+			if ( ! $a->rank ) {
+				$a->rank = 100;
+			}
+			if ( ! $b->rank ) {
+				$b->rank = 100;
+			}
+			if ( $a->rank === $b->rank ) {
+				return $a->name <=> $b->name;
+			}
+			return $a->rank <=> $b->rank;
+		} );
+
+		return $views;
+	}
 }
 
 add_action( 'gp_init', array( 'GP_Views', 'init' ) );
