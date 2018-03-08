@@ -5,6 +5,8 @@ class GP_Views_View {
 	var $public;
 	var $terms = array();
 	var $priorities = array();
+	var $screenshot;
+	var $rank;
 
 	function __construct( $data ){
 		foreach ( $data as $key => $value ) {

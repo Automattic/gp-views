@@ -37,6 +37,7 @@ class GP_Views {
 		add_action( 'gp_translation_set_filters_form', array( $this, 'translation_set_filters' ) );
 		add_filter( 'gp_for_translation_where', array( $this, 'for_translation_where' ), 10, 2 );
 		add_filter( 'gp_project_actions', array( $this, 'gp_project_actions' ), 10, 2 );
+		add_action( 'gp_translation_saved', array( $this, 'gp_translation_saved' ), 10 );
 		$this->add_routes();
 	}
 
@@ -67,7 +68,7 @@ class GP_Views {
 		}
 
 		if ( ! $view_id  ) {
-			$view_id = esc_attr( $view_data['name' ] );
+			$view_id = sanitize_title_with_dashes( $view_data['name' ] );
 			$i = 1;
 
 			while( in_array( $view_id, array_keys($this->views ) ) && $i < 10 ) {
@@ -79,6 +80,13 @@ class GP_Views {
 
 		if ( $view_data['terms'] ) {
 			$view_data['terms'] = explode( "\n", str_replace( "\r", "", trim( $view_data['terms'] ) ) );
+		}
+
+		if ( isset( $view_data['rank'] ) ) {
+			$view_data['rank'] = intval( $view_data['rank'] );
+			if ( $view_data['rank'] < 0 || $view_data['rank'] > 1000 ) {
+				$view_data['rank'] = 100;
+			}
 		}
 
 		$view = new GP_Views_View( $view_data );
@@ -113,6 +121,10 @@ class GP_Views {
 			return;
 		}
 
+		if ( ! apply_filters( 'gp_views_save', true, $this->project_id, $view_id, null, $this->views[$view_id] ) ) {
+			return false;
+		}
+
 		unset($this->views[$view_id]);
 		update_option( 'views_' . $this->project_id ,$this->views );
 	}
@@ -136,6 +148,7 @@ class GP_Views {
 		}
 
 		$view_where = array();
+
 		foreach ( $terms as $term ) {
 			$like = "LIKE '%" . ( $wpdb->escape( like_escape ( $term ) ) ) . "%'";
 			$view_where[] = '(' . implode( ' OR ', array_map( lambda('$x', '"($x $like)"', compact('like')), array('o.singular', 'o.plural', 'o.context', 'o.references' ) ) ) . ')';
@@ -175,6 +188,15 @@ class GP_Views {
 		global $wpdb;
 		$terms = $this->views[$this->current_view]->terms;
 
+		$priorities = $this->views[$this->current_view]->priorities;
+
+		if ( ! empty( $priorities ) ) {
+			$priority_where = 'o.priority in( ' . implode( ',', $priorities ) . ')';
+		} else {
+			$priority_where = "o.priority !='-2'";
+		}
+
+
 		$view_where = array();
 		foreach ( $terms as $term ) {
 			$like = "LIKE '%" . ( $wpdb->escape( like_escape ( $term ) ) ) . "%'";
@@ -182,12 +204,14 @@ class GP_Views {
 		}
 		$view_where = '(' . implode( ' OR ', $view_where ) . ')';
 		$where[] = $view_where;
+		$where[] = $priority_where;
 		return $where;
 	}
 
 	function add_routes() {
 		$path = '(.+?)';
 		$id = '([^\/]+)';
+		$locale = '([^\/]+)/([^\/]+)';
 		$projects = 'projects';
 		$project = $projects.'/'.$path;
 
@@ -195,6 +219,7 @@ class GP_Views {
 		GP::$router->add( "/views/$project/$id/-edit", array( 'GP_Route_Views', 'view_edit_get' ), 'get' );
 		GP::$router->add( "/views/$project/$id/-edit", array( 'GP_Route_Views', 'view_edit_post' ), 'post' );
 		GP::$router->add( "/views/$project/$id/-delete", array( 'GP_Route_Views', 'view_delete' ), 'get' );
+		GP::$router->add( "/views/$project/$locale", array( 'GP_Route_Views', 'locale_stats' ), 'get' );
 		GP::$router->add( "/views/$project/-add", array( 'GP_Route_Views', 'view_new_get' ), 'get' );
 		GP::$router->add( "/views/$project/-add", array( 'GP_Route_Views', 'view_new_post' ), 'post' );
 		GP::$router->add( "/views/$project", array( 'GP_Route_Views', 'views_get' ), 'get' );
@@ -203,6 +228,17 @@ class GP_Views {
 	function gp_project_actions( $actions, $project ) {
 		$actions[] = gp_link_get( '/views' . gp_url_project( $project ), __( 'Project Views' ) );
 		return $actions;
+	}
+
+	function gp_translation_saved( $translation ) {
+		$set = GP::$translation_set->get( $translation->translation_set_id );
+
+		$stats_cache_key = "views_stats_{$set->project_id}";
+		$cache_key = wp_cache_get( $stats_cache_key, 'gp_views' );
+		if ( $cache_key ) {
+			$cache_key .= "_{$set->locale}_{$set->slug}";
+			wp_cache_delete( $cache_key, 'gp_views' );
+		}
 	}
 
 	function translation_set_filters() {
