@@ -150,7 +150,11 @@ class GP_Views {
 		$view_where = array();
 
 		foreach ( $terms as $term ) {
-			$like = "LIKE '%" . ( $wpdb->escape( like_escape ( $term ) ) ) . "%'";
+			if ( substr( $term, 0, 1 ) === '-' ) {
+				$like = "NOT LIKE '%" . ( $wpdb->escape( like_escape ( substr( $term, 1 ) ) ) ) . "%'";
+			} else {
+				$like = "LIKE '%" . ( $wpdb->escape( like_escape ( $term ) ) ) . "%'";
+			}
 			$view_where[] = '(' . implode( ' OR ', array_map( lambda('$x', '"($x $like)"', compact('like')), array('o.singular', 'o.plural', 'o.context', 'o.references' ) ) ) . ')';
 		}
 
